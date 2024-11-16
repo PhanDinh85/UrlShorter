@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,7 +36,8 @@ public class UrlServiceImple implements UrlService {
     @Transactional
     public Optional<UrlMapping> retriveUrl(String shortUrl) {
 
-        Optional<UrlMapping> optional = urlRepository.findById(shortUrl);
+//        String result = shortUrl.replace("https://bit.ly/", "");
+        Optional<UrlMapping> optional = urlRepository.findByShortCode(shortUrl);
         if (optional.isPresent()) {
 
             UrlMapping urlMapping = optional.get();
@@ -47,37 +49,33 @@ public class UrlServiceImple implements UrlService {
 
     @Override
     @Transactional
-    public Optional<UrlMapping> updateShortUrl(String shortUrl, String originalUrl) {
+    public Optional<UrlMapping> updateShortUrl(String shortUrl, String newUrl) {
 
-        Optional<UrlMapping> existingUrl = urlRepository.findById(shortUrl);
-        if (existingUrl.isPresent()) {
-            UrlMapping mapping = existingUrl.get();
+        Optional<UrlMapping> optionalUrlMapping = urlRepository.findByShortCode("https://bit.ly/" + shortUrl);
 
-            if (shortUrl != null) {
-                mapping.setShortCode(shortUrl);
-                return Optional.of(urlRepository.save(mapping));
-            } else if (originalUrl != null) {
-                mapping.setOriginalUrl(originalUrl);
-                return Optional.of(urlRepository.save(mapping));
-            } else if (shortUrl != null && originalUrl != null) {
-                mapping.setOriginalUrl(originalUrl);
-                mapping.setShortCode(shortUrl);
-                return Optional.of(urlRepository.save(mapping));
-            }
+        if (optionalUrlMapping.isEmpty()) {
+            throw new RuntimeException("Short URL not found: " + shortUrl);
         }
-        return Optional.empty();
+
+        UrlMapping urlMapping = optionalUrlMapping.get();
+        urlMapping.setOriginalUrl(newUrl);
+        urlMapping.setUpdatedAt(LocalDateTime.now());
+
+        return Optional.of(urlRepository.save(urlMapping));
     }
 
     @Override
     @Transactional
     public boolean deleteUrl(String shortUrl) {
-        Optional<UrlMapping> existingUrl = urlRepository.findById(shortUrl);
+        String sLink= "https://bit.ly/" + shortUrl;
+        Optional<UrlMapping> existingUrl = urlRepository.findByShortCode(sLink);
         if (existingUrl.isPresent()) {
             UrlMapping mapping = existingUrl.get();
-            urlRepository.deleteById(mapping.getShortCode());
+            urlRepository.deleteById(String.valueOf(mapping.getId()));
             return true;
+        }else{
+            return false;
         }
-        return false;
     }
 
     @Override

@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 public class UrlMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    private long id;
+
     private String shortCode;
 
     @Pattern(regexp = "^(https?://)?([\\da-z.-]+)\\.([a-z.]{2,6})[/\\w .-]*/?$", message = "Invalid URL format")
