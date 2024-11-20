@@ -8,6 +8,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,12 +34,24 @@ public class UrlServiceImple implements UrlService {
         return urlRepository.save(urlMapping);
     }
 
+    @Transactional
+    public List<UrlMapping> createListUrl(List<String> urls) {
+
+        List<UrlMapping> urlMappingList = new ArrayList<>();
+        for (String url : urls) {
+            UrlMapping urlMapping = new UrlMapping();
+            urlMapping.setShortCode(shortenUrl());
+            urlMapping.setOriginalUrl(url);
+            urlMappingList.add(urlMapping);
+        }
+        return urlRepository.saveAll(urlMappingList);
+    }
+
     @Override
     @Transactional
     public Optional<UrlMapping> retriveUrl(String shortUrl) {
 
-//        String result = shortUrl.replace("https://bit.ly/", "");
-        Optional<UrlMapping> optional = urlRepository.findByShortCode(shortUrl);
+        Optional<UrlMapping> optional = urlRepository.findByShortCode(getUrlByShortCode(shortUrl));
         if (optional.isPresent()) {
 
             UrlMapping urlMapping = optional.get();
@@ -51,8 +65,7 @@ public class UrlServiceImple implements UrlService {
     @Transactional
     public Optional<UrlMapping> updateShortUrl(String shortUrl, String newUrl) {
 
-        Optional<UrlMapping> optionalUrlMapping = urlRepository.findByShortCode("https://bit.ly/" + shortUrl);
-
+        Optional<UrlMapping> optionalUrlMapping = urlRepository.findByShortCode(getUrlByShortCode(shortUrl));
         if (optionalUrlMapping.isEmpty()) {
             throw new RuntimeException("Short URL not found: " + shortUrl);
         }
@@ -67,13 +80,12 @@ public class UrlServiceImple implements UrlService {
     @Override
     @Transactional
     public boolean deleteUrl(String shortUrl) {
-        String sLink= "https://bit.ly/" + shortUrl;
-        Optional<UrlMapping> existingUrl = urlRepository.findByShortCode(sLink);
+        Optional<UrlMapping> existingUrl = urlRepository.findByShortCode(getUrlByShortCode(shortUrl));
         if (existingUrl.isPresent()) {
             UrlMapping mapping = existingUrl.get();
             urlRepository.deleteById(String.valueOf(mapping.getId()));
             return true;
-        }else{
+        } else {
             return false;
         }
     }
@@ -81,7 +93,14 @@ public class UrlServiceImple implements UrlService {
     @Override
     @Transactional(readOnly = true)
     public Optional<UrlMapping> getStatisticUrl(String shortCode) {
-        return urlRepository.findById(shortCode);
+        return urlRepository.findByShortCode(getUrlByShortCode(shortCode));
+    }
+
+    public String getUrlByShortCode(String shortCode) {
+        if (!shortCode.startsWith("https://bit.ly/")) {
+            return "https://bit.ly/" + shortCode;
+        }
+        return shortCode;
     }
 
     private static String shortenUrl() {

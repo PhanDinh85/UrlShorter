@@ -22,7 +22,7 @@ public class URLShorterController {
     private final UrlServiceImple serviceImple;
 
     @PostMapping("shorten")
-    public ResponseEntity<?> creatShortUrl(@Valid @RequestBody UrlMapping originMapping, BindingResult bindingResult) {
+    public ResponseEntity<?> createShortUrl(@Valid @RequestBody UrlMapping originMapping, BindingResult bindingResult) {
 
         if (bindingResult.hasErrors()) {
 
@@ -88,23 +88,14 @@ public class URLShorterController {
         }
     }
 
-    @GetMapping("shorten/{shortcode}/stats")
+    @GetMapping("shorten/stats")
     public ResponseEntity<?> statisticsShortUr(@RequestParam(name = "shortcode") String shortCode) {
 
         Optional<UrlMapping> urlMapping = serviceImple.getStatisticUrl(shortCode);
-        Map<String, Object> response = null;
         if (urlMapping.isPresent()) {
-            UrlMapping mapping = urlMapping.get();
-            response = new HashMap<>();
-            response.put("id", mapping.getId());
-            response.put("url", mapping.getOriginalUrl());
-            response.put("shortCode", mapping.getShortCode());
-            response.put("createdAt", mapping.getCreatedAt());
-            response.put("updatedAt", mapping.getUpdatedAt());
-            response.put("accessCount", mapping.getAccessAccount());
-            return ResponseEntity.status(HttpStatus.OK).body(response);
+            return new ResponseEntity<>(urlMapping.get(), HttpStatus.OK);
         } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 }
